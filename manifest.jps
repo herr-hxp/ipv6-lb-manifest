@@ -1,0 +1,40 @@
+type: install
+name: "IPv6 LoadBalancer"
+
+settings:
+  fields:
+    - name: upstream
+      caption: "Upstream IP"
+      type: string
+      required: true
+
+nodes:
+  nodeType: nginx-dockerized
+  nodeGroup: bl
+  displayName: "IPv6-LB"
+  fixedCloudlets: 1
+  cloudlets: 4
+  diskLimit: 10G
+  isSLBAccessEnabled: false
+  env:
+    UPSTREAM_IP: ${settings.upstream}
+
+onInstall:
+  - enable-public-ip
+  - set-upstream
+
+actions:       
+  enable-public-ip:    
+    - api: 
+      - method: environment.binder.attachextip
+        params:
+          nodeid: ${nodes.bl[0].id}
+          nodeGroup: bl
+          type: ipv6
+    - log: ${targetNodes.extipsv6}
+    
+  set-upstream:
+     - cmd[bl]: |-
+          echo ""
+       user: root          
+     - api [bl]: jelastic.environment.control.RestartNodes
